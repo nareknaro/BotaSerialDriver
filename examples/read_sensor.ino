@@ -1,11 +1,11 @@
+#include <Arduino.h>
 #include "BotaForceTorqueSensorComm.h"
-
 
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
 {
   public:
-  int serialReadBytes(uint8_t* data, size_t len) {return Serial.readBytes(data, len);}
-  int serialAvailable() {return Serial.available();}
+  int serialReadBytes(uint8_t* data, size_t len) override {return Serial.readBytes(data, len);}
+  int serialAvailable() override {return Serial.available();}
 } sensor;
 
 void setup() {
@@ -34,7 +34,7 @@ void loop() {
       {
         for (uint8_t i=0; i<6; i++)
         {
-          Serial.print(sensor.frame.data.forces[0]);
+          Serial.print(sensor.frame.data.forces[i]);
           Serial.print("\t");
         }
         Serial.println();

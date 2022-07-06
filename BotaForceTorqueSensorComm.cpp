@@ -5,7 +5,7 @@ BotaForceTorqueSensorComm::BotaForceTorqueSensorComm()
   _synced = false;
 }
 
-static uint16_t BotaForceTorqueSensorComm::crc16_mcrf4xx(uint8_t *data, size_t len)
+uint16_t BotaForceTorqueSensorComm::crc16_mcrf4xx(uint8_t *data, size_t len)
 {
     uint16_t crc = 0xffff;
     while (len--) {
@@ -16,7 +16,7 @@ static uint16_t BotaForceTorqueSensorComm::crc16_mcrf4xx(uint8_t *data, size_t l
     return crc;
 }
 
-static uint16_t BotaForceTorqueSensorComm::crc16_ccitt_false(uint8_t* data, size_t len)
+uint16_t BotaForceTorqueSensorComm::crc16_ccitt_false(uint8_t* data, size_t len)
 {
     uint16_t crc = 0xffff;
     while (len--) {
@@ -27,7 +27,7 @@ static uint16_t BotaForceTorqueSensorComm::crc16_ccitt_false(uint8_t* data, size
     return crc;
 }
 
-static uint16_t BotaForceTorqueSensorComm::crc16_x25(uint8_t* data, size_t len)
+uint16_t BotaForceTorqueSensorComm::crc16_x25(uint8_t* data, size_t len)
 {
     uint16_t crc = 0xffff;
     while (len--) {
@@ -46,9 +46,9 @@ bool BotaForceTorqueSensorComm::isCrcOk()
   }
   else
   {
-    _crc_err_count += 1; 
+    _crc_err_count += 1;
     return false;
-  }  
+  }
 }
 
 bool BotaForceTorqueSensorComm::checkSync()
@@ -93,5 +93,5 @@ BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame() /
       }
     }
   }
-  return err; //sucess 
+  return err; //sucess
 }
