@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include "BotaForceTorqueSensorComm.h"
 
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
