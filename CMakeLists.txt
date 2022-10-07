@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.23)
+project(BotaSerialDriver)
+
+set(CMAKE_CXX_STANDARD 14)
+
+include_directories(.)
+include_directories(examples)
+
+add_executable(BotaSerialDriver
+        examples/read_sensor_linux.cpp
+        BotaForceTorqueSensorComm.cpp
+        BotaForceTorqueSensorComm.h)

@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <ctime>
+
 // Linux headers
 #include <fcntl.h>      // Contains file controls like O_RDWR
 #include <errno.h>      // Error integer and strerror() function
@@ -28,8 +34,42 @@ class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
   }
 } sensor;
 
-int main()
+int main(int argc, char** argv)
 {
+    bool log = false;
+    std::ofstream file;
+
+    if (argc > 1)
+    {
+        log = true;
+        auto t = std::time(nullptr);
+        auto tm = *std::localtime(&t);
+        std::string filepath;
+
+        if (strcmp(argv[1],"log") == 0)
+        {
+            filepath = "/home/narek/BotaSerialDriver/logs/log.csv";
+        }
+        else if (strcmp(argv[1],"log_datetime") == 0)
+        {
+            std::ostringstream oss;
+            oss <<  "/home/narek/BotaSerialDriver/logs/log_"
+                << std::put_time(&tm, "%d-%m-%y_%H-%M-%S") << ".csv";
+            filepath = oss.str();
+        }
+        else
+        {
+            printf("Argument should be either \"log\" (save to log.csv)\nor \"log_datetime\" "
+                   "(save to log_dd-mm-yy_hh-mm-ss.csv).\n");
+            return 1;
+        }
+
+        file.open(filepath);
+        file << "timestamp,f1,f2,f3,f4,f5,f6\n";
+    }
+
+
+
     /* Open the serial port. Change device path as needed.
      */
     printf("Open serial port.\n");
@@ -44,7 +84,7 @@ int main()
       return 1;
     }
 
-    // Create new termios struc, we call it 'tty' for convention
+    // Create new termios struct, we call it 'tty' for convention
     struct termios tty;
     memset(&tty, 0, sizeof(tty));
 
@@ -80,7 +120,18 @@ int main()
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
     }
 
+    int iterations = 0;
+//    const int MAX_ITERATIONS = 10000000;
+
     while (1) {
+
+
+//      if(iterations == MAX_ITERATIONS)
+//      {
+//          file.close();
+//          break;
+//      }
+
       switch(sensor.readFrame())
       {
         case BotaForceTorqueSensorComm::VALID_FRAME:
@@ -94,13 +145,32 @@ int main()
           }
           else
           {
+
+            if(log)
+                file << sensor.frame.data.timestamp << ",";
+
+            printf("%u\t", sensor.frame.data.timestamp);
+            bool last_col;
+
             for (uint8_t i=0; i<6; i++)
             {
+              last_col = i == 5;
+              if(last_col && log)
+                  file <<  sensor.frame.data.forces[i];
+              else if(log)
+                  file <<  sensor.frame.data.forces[i] << ",";
+
               printf("%f",sensor.frame.data.forces[i]);
               printf("\t");
             }
+            if(log)
+                file << std::endl; // new line and flush buffer
+
             printf("\n");
+
+            ++iterations;
           }
+
           break;
         case BotaForceTorqueSensorComm::NOT_VALID_FRAME:
           printf("No valid frame: %i\n",sensor.get_crc_count());
