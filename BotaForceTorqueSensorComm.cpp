@@ -27,7 +27,7 @@ uint16_t BotaForceTorqueSensorComm::crc16_ccitt_false(uint8_t* data, size_t len)
     return crc;
 }
 
-uint16_t BotaForceTorqueSensorComm::crc16_x25(uint8_t* data, size_t len)
+uint16_t BotaForceTorqueSensorComm::crc16_x25(uint8_t* data, size_t len) // cyclic redundancy check (detect errors)
 {
     uint16_t crc = 0xffff;
     while (len--) {
@@ -38,7 +38,7 @@ uint16_t BotaForceTorqueSensorComm::crc16_x25(uint8_t* data, size_t len)
     return crc ^ 0xffff;
 }
 
-bool BotaForceTorqueSensorComm::isCrcOk()
+bool BotaForceTorqueSensorComm::isCrcOk() // check for errors
 {
   if(crc16_x25(frame.data.bytes, sizeof(frame.data)) == frame.crc)
   {
@@ -85,7 +85,7 @@ BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame() /
     else
     {
       err = NOT_ALLIGNED_FRAME;
-      //read one dummy bytes to regain sync
+      //read one dummy byte to regain sync
       if (serialAvailable())
       {
         uint8_t dummy;

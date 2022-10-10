@@ -147,9 +147,14 @@ int main(int argc, char** argv)
           {
 
             if(log)
+            {
                 file << sensor.frame.data.timestamp << ",";
+                file << sensor.frame.data.temperature << ",";
+            }
+
 
             printf("%u\t", sensor.frame.data.timestamp);
+            printf("%f\t", sensor.frame.data.temperature);
             bool last_col;
 
             for (uint8_t i=0; i<6; i++)
