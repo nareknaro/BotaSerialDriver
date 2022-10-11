@@ -19,7 +19,7 @@
 
 #include "../BotaForceTorqueSensorComm.h"
 
-int serial_ports[4]; // sensors [0]: 231, [1]: 229, [2]: 243, [3]:
+int serial_ports[4]; // sensors [0]: 231, [1]: 229, [2]: 243, [3]: 230
 
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
 {
@@ -136,8 +136,8 @@ int main(int argc, char** argv)
     }
 
     int iterations = 0;
-    size_t num_ports = sizeof(serial_ports)/sizeof(*serial_ports);
-    num_ports = size_t(1);
+//    size_t num_ports = sizeof(serial_ports)/sizeof(*serial_ports);
+//    num_ports = size_t(1);
 //    const int MAX_ITERATIONS = 10000000;
 
     while (1) {
@@ -149,8 +149,9 @@ int main(int argc, char** argv)
 //          break;
 //      }
 
-        for(size_t i = 0; i < num_ports; ++i) {
-            switch (sensor.readFrame(&serial_ports[3])) {
+        for(size_t i = 0; i < 4; ++i) {
+            BotaForceTorqueSensorComm::ReadFrameRes res = sensor.readFrame(&serial_ports[i]);
+            switch (res) {
                 case BotaForceTorqueSensorComm::VALID_FRAME:
                     if (sensor.frame.data.status.val > 0) {
                         printf("No valid forces:\n");
@@ -168,25 +169,21 @@ int main(int argc, char** argv)
 
 //                        printf("%u\t", sensor.frame.data.timestamp);
 //                        printf("%f\t", sensor.frame.data.temperature);
-                        bool last_col = i == 0;
 
-                        for (uint8_t j = 0; j < 6; i++) {
-                            if (last_col && log)
+
+                        for (uint8_t j = 0; j < 6; ++j) {
+                            if (i == 3 && log)
                                 file << sensor.frame.data.forces[i];
                             else if (log)
                                 file << sensor.frame.data.forces[i] << ",";
 
                             printf("%f", sensor.frame.data.forces[2]);
-                            if(last_col)
-                                printf("\n");
-                            else
-                                printf("\t");
-                            break;
+                            printf("\t");
                         }
                         if (log)
                             file << std::endl; // new line and flush buffer
 
-//                        printf("\n");
+                        printf("\n");
 
                         ++iterations;
                     }
@@ -201,6 +198,8 @@ int main(int argc, char** argv)
                 case BotaForceTorqueSensorComm::NO_FRAME:
                     break;
             }
+            if (res != BotaForceTorqueSensorComm::NO_FRAME)
+                printf("\n");
         }
     }// while app run
 
