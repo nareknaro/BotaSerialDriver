@@ -19,7 +19,7 @@
 
 #include "../BotaForceTorqueSensorComm.h"
 
-int serial_ports[4]; // sensors [0]: 231, [1]: 229, [2]: 243, [3]: 230
+
 
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
 {
@@ -32,31 +32,40 @@ class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
     ioctl(*serial_port, FIONREAD, &bytes);
     return bytes;
   }
-} sensor;
+};
 
+int serial_ports[4]; // sensors [0]: 231, [1]: 229, [2]: 243, [3]: 230
+myBotaForceTorqueSensorComm sensors[4];
 
 int main(int argc, char** argv)
 {
     bool log = false;
-    std::ofstream file;
+    std::ofstream file0;
+    std::ofstream file1;
+    std::ofstream file2;
+    std::ofstream file3;
 
     if (argc > 1)
     {
         log = true;
         auto t = std::time(nullptr);
         auto tm = *std::localtime(&t);
-        std::string filepath;
+        std::string filepaths[4];
+
 
         if (strcmp(argv[1],"log") == 0)
         {
-            filepath = "/home/narek/BotaSerialDriver/logs/log.csv";
+            filepaths[0] = "/home/narek/BotaSerialDriver/logs/log0.csv";
+            filepaths[1] = "/home/narek/BotaSerialDriver/logs/log1.csv";
+            filepaths[2] = "/home/narek/BotaSerialDriver/logs/log2.csv";
+            filepaths[3] = "/home/narek/BotaSerialDriver/logs/log3.csv";
         }
         else if (strcmp(argv[1],"log_datetime") == 0)
         {
-            std::ostringstream oss;
-            oss <<  "/home/narek/BotaSerialDriver/logs/log_"
-                << std::put_time(&tm, "%d-%m-%y_%H-%M-%S") << ".csv";
-            filepath = oss.str();
+//            std::ostringstream oss;
+//            oss <<  "/home/narek/BotaSerialDriver/logs/log_"
+//                << std::put_time(&tm, "%d-%m-%y_%H-%M-%S") << ".csv";
+//            filepath = oss.str();
         }
         else
         {
@@ -65,8 +74,14 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        file.open(filepath);
-        file << "timestamp,f1,f2,f3,f4,f5,f6\n";
+        file0.open(filepaths[0]);
+        file0 << "timestamp,f1,f2,f3,f4,f5,f6\n";
+        file1.open(filepaths[1]);
+        file1 << "timestamp,f1,f2,f3,f4,f5,f6\n";
+        file2.open(filepaths[2]);
+        file2 << "timestamp,f1,f2,f3,f4,f5,f6\n";
+        file3.open(filepaths[3]);
+        file3 << "timestamp,f1,f2,f3,f4,f5,f6\n";
     }
 
 
@@ -149,48 +164,105 @@ int main(int argc, char** argv)
 //          break;
 //      }
 
-        for(size_t i = 0; i < 4; ++i) {
-            BotaForceTorqueSensorComm::ReadFrameRes res = sensor.readFrame(&serial_ports[i]);
+        for(int i = 0; i < 4; ++i) {
+            BotaForceTorqueSensorComm::ReadFrameRes res = sensors[i].readFrame(&serial_ports[i]);
             switch (res) {
                 case BotaForceTorqueSensorComm::VALID_FRAME:
-                    if (sensor.frame.data.status.val > 0) {
+                    if (sensors[i].frame.data.status.val > 0) {
                         printf("No valid forces:\n");
-                        printf(" app_took_too_long: %i\n", sensor.frame.data.status.app_took_too_long);
-                        printf(" overrange: %i\n", sensor.frame.data.status.overrange);
-                        printf(" invalid_measurements: %i\n", sensor.frame.data.status.invalid_measurements);
-                        printf(" raw_measurements: %i\n", sensor.frame.data.status.raw_measurements);
+                        printf(" app_took_too_long: %i\n", sensors[i].frame.data.status.app_took_too_long);
+                        printf(" overrange: %i\n", sensors[i].frame.data.status.overrange);
+                        printf(" invalid_measurements: %i\n", sensors[i].frame.data.status.invalid_measurements);
+                        printf(" raw_measurements: %i\n", sensors[i].frame.data.status.raw_measurements);
                     } else {
 
                         if (log) {
-                            file << sensor.frame.data.timestamp << ",";
+                            switch(i){
+                                case 0:
+                                    file0 << sensors[i].frame.data.timestamp << ",";
+                                    break;
+                                case 1:
+                                    file1 << sensors[i].frame.data.timestamp << ",";
+                                    break;
+                                case 2:
+                                    file2 << sensors[i].frame.data.timestamp << ",";
+                                    break;
+                                case 3:
+                                    file3 << sensors[i].frame.data.timestamp << ",";
+                                    break;
+                            }
+
+//                            file << sensor.frame.data.timestamp << ",";
                             //                file << sensor.frame.data.temperature << ",";
                         }
 
 
-//                        printf("%u\t", sensor.frame.data.timestamp);
+                        printf("%u\t", sensors[i].frame.data.timestamp);
 //                        printf("%f\t", sensor.frame.data.temperature);
 
 
                         for (uint8_t j = 0; j < 6; ++j) {
-                            if (i == 3 && log)
-                                file << sensor.frame.data.forces[i];
-                            else if (log)
-                                file << sensor.frame.data.forces[i] << ",";
+                            if (j == 5 && log) { // last csv column, no comma at end
+                                switch (i) {
+                                    case 0:
+                                        file0 << sensors[i].frame.data.forces[j];
+                                        break;
+                                    case 1:
+                                        file1 << sensors[i].frame.data.forces[j];
+                                        break;
+                                    case 2:
+                                        file2 << sensors[i].frame.data.forces[j];
+                                        break;
+                                    case 3:
+                                        file3 << sensors[i].frame.data.forces[j];
+                                        break;
+                                }
+                            }
 
-                            printf("%f", sensor.frame.data.forces[2]);
+                            else if (log) {
+                                switch (i) {
+                                    case 0:
+                                        file0 << sensors[i].frame.data.forces[j] << ",";
+                                        break;
+                                    case 1:
+                                        file1 << sensors[i].frame.data.forces[j] << ",";
+                                        break;
+                                    case 2:
+                                        file2 << sensors[i].frame.data.forces[j] << ",";
+                                        break;
+                                    case 3:
+                                        file3 << sensors[i].frame.data.forces[j] << ",";
+                                        break;
+                                }
+                            }
+
+                            printf("%f", sensors[i].frame.data.forces[j]);
                             printf("\t");
                         }
                         if (log)
-                            file << std::endl; // new line and flush buffer
+                            switch(i){
+                                case 0:
+                                    file0 << std::endl;
+                                    break;
+                                case 1:
+                                    file1 << std::endl;
+                                    break;
+                                case 2:
+                                    file2 << std::endl;
+                                    break;
+                                case 3:
+                                    file3 << std::endl;
+                                    break;
+                            }
 
-                        printf("\n");
+                        printf("%i\n", i);
 
                         ++iterations;
                     }
 
                     break;
                 case BotaForceTorqueSensorComm::NOT_VALID_FRAME:
-                    printf("No valid frame: %i\n", sensor.get_crc_count());
+                    printf("No valid frame: %i\n", sensors[i].get_crc_count());
                     break;
                 case BotaForceTorqueSensorComm::NOT_ALLIGNED_FRAME:
                     printf("lost sync, trying to reconnect\n");
@@ -198,8 +270,9 @@ int main(int argc, char** argv)
                 case BotaForceTorqueSensorComm::NO_FRAME:
                     break;
             }
-            if (res != BotaForceTorqueSensorComm::NO_FRAME)
-                printf("\n");
+            if (res==BotaForceTorqueSensorComm::NO_FRAME) --i; //retry
+//            if (res != BotaForceTorqueSensorComm::NO_FRAME && i == 3)
+//                printf("\n");
         }
     }// while app run
 
