@@ -19,7 +19,10 @@
 
 #include "../BotaForceTorqueSensorComm.h"
 
-int serial_port;
+int serial_port0;
+int serial_port1;
+int serial_port2;
+int serial_port3;
 
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
 {
@@ -72,11 +75,14 @@ int main(int argc, char** argv)
 
     /* Open the serial port. Change device path as needed.
      */
-    printf("Open serial port.\n");
-    serial_port = open("/dev/ttyUSB0", O_RDWR);
+    printf("Opening serial ports.\n");
+    serial_port0 = open("/dev/ttyUSB0", O_RDWR);
+    serial_port1 = open("/dev/ttyUSB1", O_RDWR);
+    serial_port2 = open("/dev/ttyUSB2", O_RDWR);
+    serial_port3 = open("/dev/ttyUSB3", O_RDWR);
     printf("Opened port %i.\n",serial_port);
 
-    if (serial_port < 0) {
+    if (serial_port0 < 0) {
       printf("Error %i from opening device: %s\n", errno, strerror(errno));
       if (errno == 13) {
         printf("Add the current user to the dialout group");
@@ -89,7 +95,7 @@ int main(int argc, char** argv)
     memset(&tty, 0, sizeof(tty));
 
     // Read in existing settings, and handle any error
-    if(tcgetattr(serial_port, &tty) != 0) {
+    if(tcgetattr(serial_port0, &tty) != 0) {
         printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
     }
 
@@ -116,7 +122,7 @@ int main(int argc, char** argv)
     cfsetospeed(&tty, B460800);
 
     // Save tty settings, also checking for error
-    if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
+    if (tcsetattr(serial_port0, TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
     }
 
@@ -189,5 +195,5 @@ int main(int argc, char** argv)
     }// while app run
 
     printf("close serial port.\n");
-    close(serial_port);
+    close(serial_port0);
 }

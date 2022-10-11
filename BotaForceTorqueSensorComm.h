@@ -28,7 +28,8 @@ private:
           uint32_t timestamp;
           float temperature;
       };
-      uint8_t bytes[1];
+//      uint8_t* bytes;
+      uint8_t bytes[1]; // why array of size one?
   };
   union RxFrame
   {
