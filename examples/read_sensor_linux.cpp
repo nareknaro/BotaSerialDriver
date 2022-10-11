@@ -19,10 +19,7 @@
 
 #include "../BotaForceTorqueSensorComm.h"
 
-int serial_port0;
-int serial_port1;
-int serial_port2;
-int serial_port3;
+int serial_ports[4]; // sensors [0]: 231, [1]: 229, [2]: 243, [3]:
 
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
 {
@@ -36,6 +33,7 @@ class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
     return bytes;
   }
 } sensor;
+
 
 int main(int argc, char** argv)
 {
@@ -75,13 +73,13 @@ int main(int argc, char** argv)
     /* Open the serial port. Change device path as needed.
      */
     printf("Opening serial ports.\n");
-    serial_port0 = open("/dev/ttyUSB0", O_RDWR);
-    serial_port1 = open("/dev/ttyUSB1", O_RDWR);
-    serial_port2 = open("/dev/ttyUSB2", O_RDWR);
-    serial_port3 = open("/dev/ttyUSB3", O_RDWR);
-    printf("Opened port %i.\n",serial_port);
+    serial_ports[0] = open("/dev/ttyUSB0", O_RDWR);
+    serial_ports[1] = open("/dev/ttyUSB1", O_RDWR);
+    serial_ports[2] = open("/dev/ttyUSB2", O_RDWR);
+    serial_ports[3] = open("/dev/ttyUSB3", O_RDWR);
+    printf("Opened ports %i, %i, %i, %i.\n",serial_ports[0], serial_ports[1], serial_ports[2], serial_ports[3]);
 
-    if (serial_port0 < 0) {
+    if (serial_ports[0] < 0 || serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
       printf("Error %i from opening device: %s\n", errno, strerror(errno));
       if (errno == 13) {
         printf("Add the current user to the dialout group");
@@ -94,7 +92,13 @@ int main(int argc, char** argv)
     memset(&tty, 0, sizeof(tty));
 
     // Read in existing settings, and handle any error
-    if(tcgetattr(serial_port0, &tty) != 0) {
+    if(tcgetattr(serial_ports[0], &tty) != 0) {
+        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+    } else if (tcgetattr(serial_ports[1], &tty) != 0) {
+        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+    } else if (tcgetattr(serial_ports[2], &tty) != 0) {
+        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+    } else if (tcgetattr(serial_ports[3], &tty) != 0) {
         printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
     }
 
@@ -121,11 +125,19 @@ int main(int argc, char** argv)
     cfsetospeed(&tty, B460800);
 
     // Save tty settings, also checking for error
-    if (tcsetattr(serial_port0, TCSANOW, &tty) != 0) {
+    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+    } else if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+    } else if (tcsetattr(serial_ports[2], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+    } else if (tcsetattr(serial_ports[3], TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
     }
 
     int iterations = 0;
+    size_t num_ports = sizeof(serial_ports)/sizeof(*serial_ports);
+    num_ports = size_t(1);
 //    const int MAX_ITERATIONS = 10000000;
 
     while (1) {
@@ -137,62 +149,62 @@ int main(int argc, char** argv)
 //          break;
 //      }
 
-      switch(sensor.readFrame(&serial_port))
-      {
-        case BotaForceTorqueSensorComm::VALID_FRAME:
-          if (sensor.frame.data.status.val>0)
-          {
-            printf("No valid forces:\n");
-            printf(" app_took_too_long: %i\n",sensor.frame.data.status.app_took_too_long);
-            printf(" overrange: %i\n",sensor.frame.data.status.overrange);
-            printf(" invalid_measurements: %i\n",sensor.frame.data.status.invalid_measurements);
-            printf(" raw_measurements: %i\n",sensor.frame.data.status.raw_measurements);
-          }
-          else
-          {
+        for(size_t i = 0; i < num_ports; ++i) {
+            switch (sensor.readFrame(&serial_ports[3])) {
+                case BotaForceTorqueSensorComm::VALID_FRAME:
+                    if (sensor.frame.data.status.val > 0) {
+                        printf("No valid forces:\n");
+                        printf(" app_took_too_long: %i\n", sensor.frame.data.status.app_took_too_long);
+                        printf(" overrange: %i\n", sensor.frame.data.status.overrange);
+                        printf(" invalid_measurements: %i\n", sensor.frame.data.status.invalid_measurements);
+                        printf(" raw_measurements: %i\n", sensor.frame.data.status.raw_measurements);
+                    } else {
 
-            if(log)
-            {
-                file << sensor.frame.data.timestamp << ",";
-//                file << sensor.frame.data.temperature << ",";
+                        if (log) {
+                            file << sensor.frame.data.timestamp << ",";
+                            //                file << sensor.frame.data.temperature << ",";
+                        }
+
+
+//                        printf("%u\t", sensor.frame.data.timestamp);
+//                        printf("%f\t", sensor.frame.data.temperature);
+                        bool last_col = i == 0;
+
+                        for (uint8_t j = 0; j < 6; i++) {
+                            if (last_col && log)
+                                file << sensor.frame.data.forces[i];
+                            else if (log)
+                                file << sensor.frame.data.forces[i] << ",";
+
+                            printf("%f", sensor.frame.data.forces[2]);
+                            if(last_col)
+                                printf("\n");
+                            else
+                                printf("\t");
+                            break;
+                        }
+                        if (log)
+                            file << std::endl; // new line and flush buffer
+
+//                        printf("\n");
+
+                        ++iterations;
+                    }
+
+                    break;
+                case BotaForceTorqueSensorComm::NOT_VALID_FRAME:
+                    printf("No valid frame: %i\n", sensor.get_crc_count());
+                    break;
+                case BotaForceTorqueSensorComm::NOT_ALLIGNED_FRAME:
+                    printf("lost sync, trying to reconnect\n");
+                    break;
+                case BotaForceTorqueSensorComm::NO_FRAME:
+                    break;
             }
-
-
-            printf("%u\t", sensor.frame.data.timestamp);
-            printf("%f\t", sensor.frame.data.temperature);
-            bool last_col;
-
-            for (uint8_t i=0; i<6; i++)
-            {
-              last_col = i == 5;
-              if(last_col && log)
-                  file <<  sensor.frame.data.forces[i];
-              else if(log)
-                  file <<  sensor.frame.data.forces[i] << ",";
-
-              printf("%f",sensor.frame.data.forces[i]);
-              printf("\t");
-            }
-            if(log)
-                file << std::endl; // new line and flush buffer
-
-            printf("\n");
-
-            ++iterations;
-          }
-
-          break;
-        case BotaForceTorqueSensorComm::NOT_VALID_FRAME:
-          printf("No valid frame: %i\n",sensor.get_crc_count());
-          break;
-        case BotaForceTorqueSensorComm::NOT_ALLIGNED_FRAME:
-          printf("lost sync, trying to reconnect\n");
-          break;
-        case BotaForceTorqueSensorComm::NO_FRAME:
-          break;
-      }
+        }
     }// while app run
 
     printf("close serial port.\n");
-    close(serial_port0);
+    for(size_t i = 0; i < sizeof(serial_ports)/sizeof(*serial_ports); ++i)
+        close(serial_ports[i]);
 }
