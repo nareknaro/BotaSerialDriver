@@ -27,12 +27,12 @@ int serial_port3;
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
 {
   public:
-  int serialReadBytes(uint8_t* data, size_t len) override {
-    return read(serial_port, data, len);
+  int serialReadBytes(int *serial_port, uint8_t* data, size_t len) override {
+    return read(*serial_port, data, len);
   }
-  int serialAvailable() override {
+  int serialAvailable(int *serial_port) override {
     int bytes;
-    ioctl(serial_port, FIONREAD, &bytes);
+    ioctl(*serial_port, FIONREAD, &bytes);
     return bytes;
   }
 } sensor;
@@ -70,7 +70,6 @@ int main(int argc, char** argv)
         file.open(filepath);
         file << "timestamp,f1,f2,f3,f4,f5,f6\n";
     }
-
 
 
     /* Open the serial port. Change device path as needed.
@@ -138,7 +137,7 @@ int main(int argc, char** argv)
 //          break;
 //      }
 
-      switch(sensor.readFrame())
+      switch(sensor.readFrame(&serial_port))
       {
         case BotaForceTorqueSensorComm::VALID_FRAME:
           if (sensor.frame.data.status.val>0)
@@ -155,7 +154,7 @@ int main(int argc, char** argv)
             if(log)
             {
                 file << sensor.frame.data.timestamp << ",";
-                file << sensor.frame.data.temperature << ",";
+//                file << sensor.frame.data.temperature << ",";
             }
 
 
