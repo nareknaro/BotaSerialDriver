@@ -65,12 +65,12 @@ bool BotaForceTorqueSensorComm::checkSync()
   return _synced;
 }
 
-BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame() // {VALID_DATA, NOT_VALID_DATA, NOT_ALLIGNED_DATA, NO_DATA}
+BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame(int *serial_port) // {VALID_DATA, NOT_VALID_DATA, NOT_ALLIGNED_DATA, NO_DATA}
 {
   ReadFrameRes err = NO_FRAME;
-  if(serialAvailable()>=sizeof(frame))
+  if(serialAvailable(serial_port)>=sizeof(frame))
   {
-    serialReadBytes(frame.bytes, sizeof(frame));
+    serialReadBytes(serial_port,frame.bytes, sizeof(frame));
     if(checkSync())
     {
       if (isCrcOk())
@@ -86,10 +86,10 @@ BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame() /
     {
       err = NOT_ALLIGNED_FRAME;
       //read one dummy byte to regain sync
-      if (serialAvailable())
+      if (serialAvailable(serial_port))
       {
         uint8_t dummy;
-        serialReadBytes(&dummy, sizeof(dummy));
+        serialReadBytes(serial_port,&dummy, sizeof(dummy));
       }
     }
   }

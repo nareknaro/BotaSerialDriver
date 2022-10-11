@@ -51,8 +51,8 @@ public:
   bool checkSync();
   bool isSynced() {return _synced;}
   uint32_t get_crc_count() {return _crc_err_count;}
-  virtual int serialAvailable() = 0;
-  virtual int serialReadBytes(uint8_t* data, size_t len) = 0;
-  ReadFrameRes readFrame();
+  virtual int serialAvailable(int *serial_port) = 0;
+  virtual int serialReadBytes(int *serial_port, uint8_t* data, size_t len) = 0;
+  ReadFrameRes readFrame(int *serial_port);
   RxFrame frame;
 };
