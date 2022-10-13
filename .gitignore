@@ -1,0 +1,5 @@
+# ignore
+logs/
+.idea/
+cmake-build-debug/
+serial_driver
