@@ -149,7 +149,7 @@ int main(int argc, char** argv)
     }
 
     int iterations = 0;
-    bool ready = false;
+    bool ready = false; // is set to true once all sensors have been initialized and are transmitting correct data
 //    size_t num_ports = sizeof(serial_ports)/sizeof(*serial_ports);
 //    num_ports = size_t(1);
 //    const int MAX_ITERATIONS = 10000000;
@@ -173,6 +173,7 @@ int main(int argc, char** argv)
                         printf(" overrange: %i\n", sensors[i].frame.data.status.overrange);
                         printf(" invalid_measurements: %i\n", sensors[i].frame.data.status.invalid_measurements);
                         printf(" raw_measurements: %i\n", sensors[i].frame.data.status.raw_measurements);
+                        --i;
                     } else {
 
 
@@ -217,7 +218,7 @@ int main(int argc, char** argv)
                     --i; //retry on same sensor
                     break;
             }
-            if (res == myBotaForceTorqueSensorComm::VALID_FRAME && i == 3) {
+            if (res == myBotaForceTorqueSensorComm::VALID_FRAME && i == 3 && sensors[i].frame.data.status.val <= 0) {
                 if (ready) {
                     printf("\n");
                     if (log)
