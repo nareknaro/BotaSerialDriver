@@ -65,7 +65,7 @@ bool BotaForceTorqueSensorComm::checkSync()
   return _synced;
 }
 
-BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame(int *serial_port) // {VALID_DATA, NOT_VALID_DATA, NOT_ALLIGNED_DATA, NO_DATA}
+BotaForceTorqueSensorComm::ReadFrameRes BotaForceTorqueSensorComm::readFrame(int serial_port) // {VALID_DATA, NOT_VALID_DATA, NOT_ALLIGNED_DATA, NO_DATA}
 {
   ReadFrameRes err = NO_FRAME;
   if(serialAvailable(serial_port)>=sizeof(frame))

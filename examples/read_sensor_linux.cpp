@@ -24,12 +24,12 @@
 class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
 {
   public:
-  int serialReadBytes(int *serial_port, uint8_t* data, size_t len) override {
-    return read(*serial_port, data, len);
+  int serialReadBytes(int serial_port, uint8_t* data, size_t len) override {
+    return read(serial_port, data, len);
   }
-  int serialAvailable(int *serial_port) override {
+  int serialAvailable(int serial_port) override {
     int bytes;
-    ioctl(*serial_port, FIONREAD, &bytes);
+    ioctl(serial_port, FIONREAD, &bytes);
     return bytes;
   }
 };
@@ -164,7 +164,7 @@ int main(int argc, char** argv)
 //      }
 
         for(int i = 0; i < 4; ++i) {
-            BotaForceTorqueSensorComm::ReadFrameRes res = sensors[i].readFrame(&serial_ports[i]);
+            BotaForceTorqueSensorComm::ReadFrameRes res = sensors[i].readFrame(serial_ports[i]);
             switch (res) {
                 case BotaForceTorqueSensorComm::VALID_FRAME:
                     if (sensors[i].frame.data.status.val > 0) {
