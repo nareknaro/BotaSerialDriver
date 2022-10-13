@@ -72,14 +72,12 @@ int main(int argc, char** argv)
         }
 
         file.open(filepath);
-        file << "timestamp0,f0_0,f0_1,f0_2,f0_3,f0_4,f0_5,timestamp1,f1_0,f1_1,f1_2,f1_3,f1_4,f1_5,"
-                "timestamp2,f2_0,f2_1,f2_2,f2_3,f2_4,f2_5,timestamp3,f3_0,f3_1,f3_2,f3_3,f3_4,f3_5\n";
-//        file1.open(filepaths[1]);
-//        file1 << "timestamp,f1,f2,f3,f4,f5,f6\n";
-//        file2.open(filepaths[2]);
-//        file2 << "timestamp,f1,f2,f3,f4,f5,f6\n";
-//        file3.open(filepaths[3]);
-//        file3 << "timestamp,f1,f2,f3,f4,f5,f6\n";
+        file << "timestamp0,f0,timestamp1,f1,timestamp2,f2,timestamp3,f3\n";
+
+        /* IF LOGGING ALL 6 COMPONENTS OF FORCES */
+//        file << "timestamp0,f0_0,f0_1,f0_2,f0_3,f0_4,f0_5,timestamp1,f1_0,f1_1,f1_2,f1_3,f1_4,f1_5,"
+//                "timestamp2,f2_0,f2_1,f2_2,f2_3,f2_4,f2_5,timestamp3,f3_0,f3_1,f3_2,f3_3,f3_4,f3_5\n";
+
     }
 
 
@@ -173,34 +171,45 @@ int main(int argc, char** argv)
                         printf(" overrange: %i\n", sensors[i].frame.data.status.overrange);
                         printf(" invalid_measurements: %i\n", sensors[i].frame.data.status.invalid_measurements);
                         printf(" raw_measurements: %i\n", sensors[i].frame.data.status.raw_measurements);
-                        --i;
+                        --i; //retry same sensor
                     } else {
-
-
 
                         if(ready) {
                             printf("%u\t", sensors[i].frame.data.timestamp);
-                            if (log)
-                                file << sensors[i].frame.data.timestamp << ",";
+                            printf("%f\t", sensors[i].frame.data.forces[2]);
+                            if (i==3 && log) // last csv column, no comma at end
+                                file << sensors[i].frame.data.timestamp << ","
+                                << sensors[i].frame.data.forces[2];
+                            else if (log)
+                                file << sensors[i].frame.data.timestamp << ","
+                                << sensors[i].frame.data.forces[2] << ",";
                         }
 
-//                                file << sensor.frame.data.temperature << ",";
-//                        printf("%f\t", sensor.frame.data.temperature);
 
-
-                        for (uint8_t j = 0; j < 6; ++j) {
-                            if (ready) {
-                                printf("%f\t", sensors[i].frame.data.forces[j]);
-                                if (i == 3 && j == 5 && log)   // last csv column, no comma at end
-                                    file << sensors[i].frame.data.forces[j];
-                                else if (log)
-                                    file << sensors[i].frame.data.forces[j] << ",";
-                            }
-
-                        }
-
-                        if(ready)
-                            printf("sensor %i\t", i);
+/* FOR READING/LOGGING ALL 6 FORCES VALUES */
+//                        if(ready) {
+//                            printf("%u\t", sensors[i].frame.data.timestamp);
+//                            if (log)
+//                                file << sensors[i].frame.data.timestamp << ",";
+//                        }
+//
+////                                file << sensor.frame.data.temperature << ",";
+////                        printf("%f\t", sensor.frame.data.temperature);
+//
+//
+//                        for (uint8_t j = 0; j < 6; ++j) {
+//                            if (ready) {
+//                                printf("%f\t", sensors[i].frame.data.forces[j]);
+//                                if (i == 3 && j == 5 && log)   // last csv column, no comma at end
+//                                    file << sensors[i].frame.data.forces[j];
+//                                else if (log)
+//                                    file << sensors[i].frame.data.forces[j] << ",";
+//                            }
+//
+//                        }
+//
+//                        if(ready)
+//                            printf("sensor %i\t", i);
 
                         ++iterations;
                     }
