@@ -41,6 +41,7 @@ int main(int argc, char** argv)
 {
     bool log = false;
     std::ofstream file;
+    std::string filepath;
 //    std::ofstream file1;
 //    std::ofstream file2;
 //    std::ofstream file3;
@@ -50,8 +51,6 @@ int main(int argc, char** argv)
         log = true;
         auto t = std::time(nullptr);
         auto tm = *std::localtime(&t);
-        std::string filepath;
-
 
         if (strcmp(argv[1],"log") == 0)
         {
@@ -92,6 +91,7 @@ int main(int argc, char** argv)
 
     if (serial_ports[0] < 0 || serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
       printf("Error %i from opening device: %s\n", errno, strerror(errno));
+      std::remove(filepath.c_str());
       if (errno == 13) {
         printf("Add the current user to the dialout group");
       }
