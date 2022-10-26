@@ -16,7 +16,7 @@
 #include <termios.h>    // Contains POSIX terminal control definitions
 #include <unistd.h>     // write(), read(), close()
 #include <sys/ioctl.h>
-#include <linux/serial.h>
+//#include <linux/serial.h>
 
 #include "../BotaForceTorqueSensorComm.h"
 
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 
     // Create new termios struct, we call it 'tty' for convention
     struct termios tty;
-    struct serial_struct ser_info;
+//    struct serial_struct ser_info;
     memset(&tty, 0, sizeof(tty));
 
     // Read in existing settings, and handle any error
@@ -137,28 +137,27 @@ int main(int argc, char** argv)
     cfsetispeed(&tty, B460800);
     cfsetospeed(&tty, B460800);
 
-//    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
-//        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-//    }
-//  else if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
-//        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-//    } else if (tcsetattr(serial_ports[2], TCSANOW, &tty) != 0) {
-//        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-//    } else if (tcsetattr(serial_ports[3], TCSANOW, &tty) != 0) {
-//        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-//    }
-
-    for (size_t i = 0; i < sizeof(serial_ports)/sizeof(serial_ports[0]); ++i){
-        // Save tty settings, also checking for error
-        if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
-            printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-        }
-
-        // Enable linux FTDI low latency mode
-        ioctl(serial_ports[i], TIOCGSERIAL, &ser_info);
-        ser_info.flags |= ASYNC_LOW_LATENCY;
-        ioctl(serial_ports[i], TIOCSSERIAL, &ser_info);
+    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+    } else if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+    } else if (tcsetattr(serial_ports[2], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+    } else if (tcsetattr(serial_ports[3], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
     }
+
+//    for (size_t i = 0; i < sizeof(serial_ports)/sizeof(serial_ports[0]); ++i){
+//        // Save tty settings, also checking for error
+//        if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
+//            printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+//        }
+//
+//        // Enable linux FTDI low latency mode
+//        ioctl(serial_ports[i], TIOCGSERIAL, &ser_info);
+//        ser_info.flags |= ASYNC_LOW_LATENCY;
+//        ioctl(serial_ports[i], TIOCSSERIAL, &ser_info);
+//    }
 
 
 
