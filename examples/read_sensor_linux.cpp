@@ -84,14 +84,13 @@ int main(int argc, char** argv)
     /* Open the serial port. Change device path as needed.
      */
     printf("Opening serial ports.\n");
-//    serial_ports[0] = open("/dev/ttyUSB0", O_RDWR);
+    serial_ports[0] = open("/dev/ttyUSB0", O_RDWR);
     serial_ports[1] = open("/dev/ttyUSB1", O_RDWR);
     serial_ports[2] = open("/dev/ttyUSB2", O_RDWR);
     serial_ports[3] = open("/dev/ttyUSB3", O_RDWR);
     printf("Opened ports %i, %i, %i, %i.\n",serial_ports[0], serial_ports[1], serial_ports[2], serial_ports[3]);
 
-//    if (serial_ports[0] < 0 || serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
-    if (serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
+    if (serial_ports[0] < 0 || serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
       printf("Error %i from opening device: %s\n", errno, strerror(errno));
       std::remove(filepath.c_str());
       if (errno == 13) {
@@ -106,10 +105,9 @@ int main(int argc, char** argv)
     memset(&tty, 0, sizeof(tty));
 
     // Read in existing settings, and handle any error
-//    if(tcgetattr(serial_ports[0], &tty) != 0) {
-//        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
-//    } else
-    if (tcgetattr(serial_ports[1], &tty) != 0) {
+    if(tcgetattr(serial_ports[0], &tty) != 0) {
+        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+    } else if (tcgetattr(serial_ports[1], &tty) != 0) {
         printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
     } else if (tcgetattr(serial_ports[2], &tty) != 0) {
         printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
@@ -139,10 +137,9 @@ int main(int argc, char** argv)
     cfsetispeed(&tty, B460800);
     cfsetospeed(&tty, B460800);
 
-//    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
-//        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-//    } else
-    if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
+    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
+        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+    } else if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
     } else if (tcsetattr(serial_ports[2], TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
