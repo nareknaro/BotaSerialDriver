@@ -177,7 +177,6 @@ int main(int argc, char** argv)
 //      }
 
         for(int i = 0; i < 4; ++i) {
-            if (i==0) continue;
             BotaForceTorqueSensorComm::ReadFrameRes res = sensors[i].readFrame(serial_ports[i]);
             switch (res) {
                 case BotaForceTorqueSensorComm::VALID_FRAME:
