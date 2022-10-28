@@ -16,7 +16,7 @@
 #include <termios.h>    // Contains POSIX terminal control definitions
 #include <unistd.h>     // write(), read(), close()
 #include <sys/ioctl.h>
-//#include <linux/serial.h>
+#include <linux/serial.h>
 
 #include "../BotaForceTorqueSensorComm.h"
 
@@ -84,13 +84,14 @@ int main(int argc, char** argv)
     /* Open the serial port. Change device path as needed.
      */
     printf("Opening serial ports.\n");
-    serial_ports[0] = open("/dev/ttyUSB0", O_RDWR);
+//    serial_ports[0] = open("/dev/ttyUSB0", O_RDWR);
     serial_ports[1] = open("/dev/ttyUSB1", O_RDWR);
     serial_ports[2] = open("/dev/ttyUSB2", O_RDWR);
     serial_ports[3] = open("/dev/ttyUSB3", O_RDWR);
     printf("Opened ports %i, %i, %i, %i.\n",serial_ports[0], serial_ports[1], serial_ports[2], serial_ports[3]);
 
-    if (serial_ports[0] < 0 || serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
+//    if (serial_ports[0] < 0 || serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
+    if (serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
       printf("Error %i from opening device: %s\n", errno, strerror(errno));
       std::remove(filepath.c_str());
       if (errno == 13) {
@@ -101,13 +102,14 @@ int main(int argc, char** argv)
 
     // Create new termios struct, we call it 'tty' for convention
     struct termios tty;
-//    struct serial_struct ser_info;
+    struct serial_struct ser_info[4];
     memset(&tty, 0, sizeof(tty));
 
     // Read in existing settings, and handle any error
-    if(tcgetattr(serial_ports[0], &tty) != 0) {
-        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
-    } else if (tcgetattr(serial_ports[1], &tty) != 0) {
+//    if(tcgetattr(serial_ports[0], &tty) != 0) {
+//        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+//    } else
+    if (tcgetattr(serial_ports[1], &tty) != 0) {
         printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
     } else if (tcgetattr(serial_ports[2], &tty) != 0) {
         printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
@@ -137,9 +139,10 @@ int main(int argc, char** argv)
     cfsetispeed(&tty, B460800);
     cfsetospeed(&tty, B460800);
 
-    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
-        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-    } else if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
+//    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
+//        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+//    } else
+    if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
     } else if (tcsetattr(serial_ports[2], TCSANOW, &tty) != 0) {
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
@@ -147,17 +150,12 @@ int main(int argc, char** argv)
         printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
     }
 
-//    for (size_t i = 0; i < sizeof(serial_ports)/sizeof(serial_ports[0]); ++i){
-//        // Save tty settings, also checking for error
-//        if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
-//            printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-//        }
-//
-//        // Enable linux FTDI low latency mode
-//        ioctl(serial_ports[i], TIOCGSERIAL, &ser_info);
-//        ser_info.flags |= ASYNC_LOW_LATENCY;
-//        ioctl(serial_ports[i], TIOCSSERIAL, &ser_info);
-//    }
+    for(size_t i = 0; i < sizeof(serial_ports)/sizeof(serial_ports[0]); ++i){
+        // Enable linux FTDI low latency mode
+        ioctl(serial_ports[i], TIOCGSERIAL, &ser_info[i]);
+        ser_info[i].flags |= ASYNC_LOW_LATENCY;
+        ioctl(serial_ports[i], TIOCSSERIAL, &ser_info[i]);
+    }
 
 
 
@@ -179,6 +177,7 @@ int main(int argc, char** argv)
 //      }
 
         for(int i = 0; i < 4; ++i) {
+            if (i==0) continue;
             BotaForceTorqueSensorComm::ReadFrameRes res = sensors[i].readFrame(serial_ports[i]);
             switch (res) {
                 case BotaForceTorqueSensorComm::VALID_FRAME:
