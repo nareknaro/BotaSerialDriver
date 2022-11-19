@@ -2,5 +2,6 @@
 logs/
 .idea/
 cmake-build-debug/
+load_cell_logs/
 serial_driver
 *.csv
