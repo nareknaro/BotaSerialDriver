@@ -35,17 +35,22 @@ class myBotaForceTorqueSensorComm : public BotaForceTorqueSensorComm
   }
 };
 
-int serial_ports[4]; // sensors [0]: 231, [1]: 229, [2]: 243, [3]: 230
-myBotaForceTorqueSensorComm sensors[4];
+size_t const NUM_SENSORS = 4;
+int serial_ports[NUM_SENSORS]; // sensors [0]: 231, [1]: 229, [2]: 243, [3]: 230
+std::string ports[NUM_SENSORS] ={"/dev/ttyUSB0",
+                                 "/dev/ttyUSB1",
+                                 "/dev/ttyUSB2",
+                                 "/dev/ttyUSB3"};
+
+//std::string ports[NUM_SENSORS] ={"/dev/ttyUSB3"};
+myBotaForceTorqueSensorComm sensors[NUM_SENSORS];
+
 
 int main(int argc, char** argv)
 {
     bool log = false;
     std::ofstream file;
     std::string filepath;
-//    std::ofstream file1;
-//    std::ofstream file2;
-//    std::ofstream file3;
 
     if (argc > 1)
     {
@@ -55,12 +60,12 @@ int main(int argc, char** argv)
 
         if (strcmp(argv[1],"log") == 0)
         {
-            filepath = "/home/narek/BotaSerialDriver/logs/log.csv";
+            filepath = "/home/narek/MA/BotaSerialDriver/logs/log.csv";
         }
         else if (strcmp(argv[1],"log_datetime") == 0)
         {
             std::ostringstream oss;
-            oss <<  "/home/narek/BotaSerialDriver/logs/log_"
+            oss <<  "/home/narek/MA/BotaSerialDriver/logs/log_"
                 << std::put_time(&tm, "%d-%m-%y_%H-%M-%S") << ".csv";
             filepath = oss.str();
         }
@@ -72,7 +77,16 @@ int main(int argc, char** argv)
         }
 
         file.open(filepath);
-        file << "timestamp0,f0,timestamp1,f1,timestamp2,f2,timestamp3,f3\n";
+        std::ostringstream header;
+        for (size_t i = 0; i < NUM_SENSORS; ++i) {
+            if(i == NUM_SENSORS-1){
+                header << "timestamp" << i << "," << "f" << i << "\n";
+                continue;
+            }
+            header << "timestamp" << i << "," << "f" << i << ",";
+        }
+
+        file << header.str();
 
         /* IF LOGGING ALL 6 COMPONENTS OF FORCES */
 //        file << "timestamp0,f0_0,f0_1,f0_2,f0_3,f0_4,f0_5,timestamp1,f1_0,f1_1,f1_2,f1_3,f1_4,f1_5,"
@@ -84,70 +98,70 @@ int main(int argc, char** argv)
     /* Open the serial port. Change device path as needed.
      */
     printf("Opening serial ports.\n");
-    serial_ports[0] = open("/dev/ttyUSB0", O_RDWR);
-    serial_ports[1] = open("/dev/ttyUSB1", O_RDWR);
-    serial_ports[2] = open("/dev/ttyUSB2", O_RDWR);
-    serial_ports[3] = open("/dev/ttyUSB3", O_RDWR);
-    printf("Opened ports %i, %i, %i, %i.\n",serial_ports[0], serial_ports[1], serial_ports[2], serial_ports[3]);
 
-    if (serial_ports[0] < 0 || serial_ports[1] < 0 || serial_ports[2] < 0 || serial_ports[3] < 0) {
-      printf("Error %i from opening device: %s\n", errno, strerror(errno));
-      std::remove(filepath.c_str());
-      if (errno == 13) {
-        printf("Add the current user to the dialout group");
-      }
-      return 1;
+    for (size_t i=0; i < NUM_SENSORS; ++i) {
+        serial_ports[i] = open(ports[i].c_str(), O_RDWR);
+        if (serial_ports[i] < 0) {
+            printf("Error %i from opening device %zu: %s\n", errno, i, strerror(errno));
+            std::remove(filepath.c_str());
+            if (errno == 13) {
+                printf("Add the current user to the dialout group");
+            }
+            return 1;
+        }
     }
+
+
+    std::ostringstream oss;
+    oss <<  "Opened ports: ";
+    for(size_t i = 0; i < NUM_SENSORS; ++i) {
+        oss << serial_ports[i] << " ";
+    }
+    printf("%s", oss.str().c_str());
+
 
     // Create new termios struct, we call it 'tty' for convention
-    struct termios tty;
-    struct serial_struct ser_info[4];
+    struct termios tty[NUM_SENSORS];
+    struct serial_struct ser_info[NUM_SENSORS];
     memset(&tty, 0, sizeof(tty));
 
-    // Read in existing settings, and handle any error
-    if(tcgetattr(serial_ports[0], &tty) != 0) {
-        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
-    } else if (tcgetattr(serial_ports[1], &tty) != 0) {
-        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
-    } else if (tcgetattr(serial_ports[2], &tty) != 0) {
-        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
-    } else if (tcgetattr(serial_ports[3], &tty) != 0) {
-        printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
-    }
+    for (size_t i = 0; i < NUM_SENSORS; ++i) {
+        // Read in existing settings, and handle any error
+        if (tcgetattr(serial_ports[i], &tty[i]) != 0) {
+            printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+            return false;
+        }
 
-    tty.c_cflag &= ~PARENB; // Disable parity
-    tty.c_cflag &= ~CSTOPB; // 1 stop bit
-    tty.c_cflag |= CS8; // 8 bits per byte
-    tty.c_cflag &= ~CRTSCTS; // Disable RTS/CTS hardware flow control
-    tty.c_cflag |= CREAD | CLOCAL; // Turn on READ & ignore ctrl lines (CLOCAL = 1)
+        tty[i].c_cflag &= ~PARENB;   // Disable parity
+        tty[i].c_cflag &= ~CSTOPB;   // 1 stop bit
+        tty[i].c_cflag |= CS8;       // 8 bits per byte
+        tty[i].c_cflag &= ~CRTSCTS;  // Disable RTS/CTS hardware flow control
+        tty[i].c_cflag |= (CREAD | CLOCAL);  // Turn on READ & ignore ctrl lines (CLOCAL = 1)
 
-    tty.c_lflag &= ~ICANON; // Disable canonical mode
-    tty.c_lflag &= ~ECHO; // Disable echo
-    tty.c_lflag &= ~ECHOE; // Disable erasure
-    tty.c_lflag &= ~ECHONL; // Disable new-line echo
-    tty.c_lflag &= ~ISIG; // Disable interpretation of INTR, QUIT and SUSP
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY); // Turn off s/w flow ctrl
-    tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL); // Disable any special handling of received bytes
-    tty.c_oflag &= ~OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
-    tty.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
-    tty.c_cc[VTIME] = 10; // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
-    tty.c_cc[VMIN] = 0;
+        tty[i].c_lflag &= ~ICANON;  // Disable canonical mode
+        tty[i].c_lflag &= ~ECHO;    // Disable echo
+        tty[i].c_lflag &= ~ECHOE;   // Disable erasure
+        tty[i].c_lflag &= ~ECHONL;  // Disable new-line echo
+        tty[i].c_lflag &= ~ISIG;    // Disable interpretation of INTR, QUIT and SUSP
+        tty[i].c_iflag &= ~(IXON | IXOFF | IXANY);  // Turn off s/w flow ctrl
+        tty[i].c_iflag &=
+                ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL); // Disable any special handling of received bytes
 
-    // Set in/out baud rate to be 460800
-    cfsetispeed(&tty, B460800);
-    cfsetospeed(&tty, B460800);
+        tty[i].c_oflag &= ~OPOST;  // Prevent special interpretation of output bytes (e.g. newline chars)
+        tty[i].c_oflag &= ~ONLCR;  // Prevent conversion of newline to carriage return/line feed
 
-    if (tcsetattr(serial_ports[0], TCSANOW, &tty) != 0) {
-        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-    } else if (tcsetattr(serial_ports[1], TCSANOW, &tty) != 0) {
-        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-    } else if (tcsetattr(serial_ports[2], TCSANOW, &tty) != 0) {
-        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-    } else if (tcsetattr(serial_ports[3], TCSANOW, &tty) != 0) {
-        printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
-    }
+        tty[i].c_cc[VTIME] = 10;  // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
+        tty[i].c_cc[VMIN] = 0;
 
-    for(size_t i = 0; i < sizeof(serial_ports)/sizeof(serial_ports[0]); ++i){
+        // Set in/out baud rate to be 460800
+        cfsetispeed(&tty[i], B460800);
+        cfsetospeed(&tty[i], B460800);
+
+        if (tcsetattr(serial_ports[i], TCSANOW, &tty[i]) != 0) {
+            printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+            return false;
+        }
+
         // Enable linux FTDI low latency mode
         ioctl(serial_ports[i], TIOCGSERIAL, &ser_info[i]);
         ser_info[i].flags |= ASYNC_LOW_LATENCY;
@@ -156,12 +170,8 @@ int main(int argc, char** argv)
 
 
 
-
-
     int iterations = 0;
     bool ready = false; // is set to true once all sensors have been initialized and are transmitting correct data
-//    size_t num_ports = sizeof(serial_ports)/sizeof(*serial_ports);
-//    num_ports = size_t(1);
 //    const int MAX_ITERATIONS = 10000000;
 
     while (1) {
@@ -173,7 +183,7 @@ int main(int argc, char** argv)
 //          break;
 //      }
 
-        for(int i = 0; i < 4; ++i) {
+        for(size_t i = 0; i < NUM_SENSORS; ++i) {
             BotaForceTorqueSensorComm::ReadFrameRes res = sensors[i].readFrame(serial_ports[i]);
             switch (res) {
                 case BotaForceTorqueSensorComm::VALID_FRAME:
@@ -189,12 +199,12 @@ int main(int argc, char** argv)
                         if(ready) {
                             printf("%u\t", sensors[i].frame.data.timestamp);
                             printf("%f\t", sensors[i].frame.data.forces[2]);
-                            if (i==3 && log) // last csv column, no comma at end
-                                file << sensors[i].frame.data.timestamp << ","
-                                << sensors[i].frame.data.forces[2];
+                            if (i==NUM_SENSORS-1 && log) // last csv column, no comma at end
+                                file << std::setprecision(64) << sensors[i].frame.data.timestamp << ","
+                                << std::setprecision(64) << sensors[i].frame.data.forces[2];
                             else if (log)
-                                file << sensors[i].frame.data.timestamp << ","
-                                << sensors[i].frame.data.forces[2] << ",";
+                                file << std::setprecision(64) << sensors[i].frame.data.timestamp << ","
+                                << std::setprecision(64) << sensors[i].frame.data.forces[2] << ",";
                         }
 
 
@@ -212,7 +222,7 @@ int main(int argc, char** argv)
 //                        for (uint8_t j = 0; j < 6; ++j) {
 //                            if (ready) {
 //                                printf("%f\t", sensors[i].frame.data.forces[j]);
-//                                if (i == 3 && j == 5 && log)   // last csv column, no comma at end
+//                                if (i == NUM_SENSORS-1 && j == 5 && log)   // last csv column, no comma at end
 //                                    file << sensors[i].frame.data.forces[j];
 //                                else if (log)
 //                                    file << sensors[i].frame.data.forces[j] << ",";
@@ -239,7 +249,7 @@ int main(int argc, char** argv)
                     --i; //retry on same sensor
                     break;
             }
-            if (res == myBotaForceTorqueSensorComm::VALID_FRAME && i == 3 && sensors[i].frame.data.status.val <= 0) {
+            if (res == myBotaForceTorqueSensorComm::VALID_FRAME && i == NUM_SENSORS-1 && sensors[i].frame.data.status.val <= 0) {
                 if (ready) {
                     printf("\n");
                     if (log)
